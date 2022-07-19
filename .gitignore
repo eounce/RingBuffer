@@ -1,0 +1,7 @@
+Debug
+Release
+x64
+.vs
+RingBuffer/Debug
+RingBuffer/Reease
+RingBuffer/x64
