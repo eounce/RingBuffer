@@ -107,7 +107,7 @@ void RingBuffer::ClearBuffer()
 int RingBuffer::DirectEnqueueSize()
 {
 	int size = (_rear + 1) % _bufferSize;
-	if (size >= _front)
+	if (size > _front)
 		return _bufferSize - size;
 	else
 		return _front - size;

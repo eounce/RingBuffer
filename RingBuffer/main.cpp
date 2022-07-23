@@ -32,9 +32,19 @@ unsigned WINAPI EnqueueProc(LPVOID lpParam)
 		}
 
 		int size = rand() % strSize + 1;
-		if (!g_ringBuffer.Enqueue(&g_str[enqSize], size)) continue;
-		memcpy_s(&testBuffer[enqSize], size, &g_str[enqSize], size);
 
+		// 1) DirectEnqueue Test
+		///*
+		if (g_ringBuffer.DirectEnqueueSize() < size)
+			size = g_ringBuffer.DirectEnqueueSize();
+		memcpy_s(g_ringBuffer.GetRearBufferPtr(), size, &g_str[enqSize], size);
+		g_ringBuffer.MoveRear(size);
+		//*/
+
+		// 2) Enqueue Test
+		//if (!g_ringBuffer.Enqueue(&g_str[enqSize], size)) continue;
+		
+		memcpy_s(&testBuffer[enqSize], size, &g_str[enqSize], size);
 		enqSize += size;
 		strSize -= size;
 		g_enqCnt++;
@@ -74,8 +84,23 @@ unsigned WINAPI DequeueProc(LPVOID lpParam)
 		}
 
 		int size = rand() % strSize + 1;
+
+		// 1) DirectDequeue Test
+		///*
+		if (g_ringBuffer.DirectDequeueSize() < size)
+			size = g_ringBuffer.DirectDequeueSize();
+
+		if (!g_ringBuffer.Peek(&testBuffer[deqSize], size)) continue;
+		memcpy_s(&buffer[deqSize], size, g_ringBuffer.GetFrontBufferPtr(), size);
+		g_ringBuffer.MoveFront(size);
+		//*/
+
+		// 2) Dequeue Test
+		/*
 		if (!g_ringBuffer.Peek(&testBuffer[deqSize], size)) continue;
 		if (!g_ringBuffer.Dequeue(&buffer[deqSize], size)) continue;
+		//*/
+
 		if (memcmp(testBuffer, buffer, size) != 0)
 		{
 			printf("memcmp error\n");
