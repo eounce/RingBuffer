@@ -8,6 +8,7 @@ RingBuffer::RingBuffer(int bufferSize)
 {
 	_buffer = (char*)malloc(bufferSize);
 	_bufferSize = bufferSize;
+	InitializeSRWLock(&_srw);
 }
 
 RingBuffer::~RingBuffer()
@@ -24,19 +25,19 @@ bool RingBuffer::Enqueue(char* pData, int size)
 {
 	if (GetFreeSize() < size) return false;
 
-	_rear = (_rear + 1) % _bufferSize;
-	if (_rear + size > _bufferSize)
+	int rear = (_rear + 1) % _bufferSize;
+	if (rear + size > _bufferSize)
 	{
-		int overIdx = (_rear + size) - _bufferSize;
-		memcpy_s(&_buffer[_rear], size - overIdx, pData, size - overIdx);
+		int overIdx = (rear + size) - _bufferSize;
+		memcpy_s(&_buffer[rear], size - overIdx, pData, size - overIdx);
 		pData += (size - overIdx);
 		size -= (size - overIdx);
 
-		_rear = 0;
+		rear = 0;
 	}
 
-	memcpy_s(&_buffer[_rear], size, pData, size);
-	_rear += (size - 1);
+	memcpy_s(&_buffer[rear], size, pData, size);
+	_rear = rear + (size - 1);
 
 	return true;
 }
@@ -45,19 +46,19 @@ bool RingBuffer::Dequeue(char* pDest, int size)
 {
 	if (GetUseSize() < size) return false;
 
-	_front = (_front + 1) % _bufferSize;
-	if (_front + size > _bufferSize)
+	int front = (_front + 1) % _bufferSize;
+	if (front + size > _bufferSize)
 	{
-		int overIdx = (_front + size) - _bufferSize;
-		memcpy_s(pDest, size - overIdx, &_buffer[_front], size - overIdx);
+		int overIdx = (front + size) - _bufferSize;
+		memcpy_s(pDest, size - overIdx, &_buffer[front], size - overIdx);
 		pDest += (size - overIdx);
 		size -= (size - overIdx);
 
-		_front = 0;
+		front = 0;
 	}
 
-	memcpy_s(pDest, size, &_buffer[_front], size);
-	_front += (size - 1);
+	memcpy_s(pDest, size, &_buffer[front], size);
+	_front = front + (size - 1);
 
 	return true;
 }
@@ -88,6 +89,7 @@ int RingBuffer::GetUseSize()
 		size = _rear - _front;
 	else
 		size = _bufferSize + (_rear - _front);
+
 	return size;
 }
 
@@ -138,4 +140,20 @@ void RingBuffer::MoveRear(int size)
 void RingBuffer::MoveFront(int size)
 {
 	_front = (_front + size) % _bufferSize;
+}
+
+void RingBuffer::Lock(LOCK type)
+{
+	if (type == EXCLUSIVE)
+		AcquireSRWLockExclusive(&_srw);
+	else
+		AcquireSRWLockShared(&_srw);
+}
+
+void RingBuffer::Unlock(LOCK type)
+{
+	if (type == EXCLUSIVE)
+		ReleaseSRWLockExclusive(&_srw);
+	else
+		ReleaseSRWLockShared(&_srw);
 }
