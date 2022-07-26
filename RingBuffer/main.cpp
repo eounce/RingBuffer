@@ -35,8 +35,7 @@ unsigned WINAPI EnqueueProc(LPVOID lpParam)
 
 		// 1) DirectEnqueue Test
 		///*
-		if (g_ringBuffer.DirectEnqueueSize() < size)
-			size = g_ringBuffer.DirectEnqueueSize();
+		if (g_ringBuffer.DirectEnqueueSize() < size) continue;
 		memcpy_s(g_ringBuffer.GetRearBufferPtr(), size, &g_str[enqSize], size);
 		g_ringBuffer.MoveRear(size);
 		//*/
@@ -87,9 +86,7 @@ unsigned WINAPI DequeueProc(LPVOID lpParam)
 
 		// 1) DirectDequeue Test
 		///*
-		if (g_ringBuffer.DirectDequeueSize() < size)
-			size = g_ringBuffer.DirectDequeueSize();
-
+		if (g_ringBuffer.DirectDequeueSize() < size) continue;
 		if (!g_ringBuffer.Peek(&testBuffer[deqSize], size)) continue;
 		memcpy_s(&buffer[deqSize], size, g_ringBuffer.GetFrontBufferPtr(), size);
 		g_ringBuffer.MoveFront(size);
